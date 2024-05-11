@@ -37,9 +37,6 @@ public class Test {
 //
         //Testo della pagina: (stampa anche il testo dei button)
 //        System.out.println(body.text());
-        long time = System.currentTimeMillis();
         wordCounter.getWordOccurencies(TAGLIATA, "a", 1);
-        long elapsedTime =  System.currentTimeMillis() - time;
-        System.out.println("Time: " + elapsedTime + " ms");
     }
 }
