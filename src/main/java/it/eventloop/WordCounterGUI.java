@@ -12,6 +12,7 @@ import java.util.List;
 
 public class WordCounterGUI extends JFrame implements ReportObserver {
     private WordCounterTextArea textArea;
+    private WordCounterVerticle wordCounterVerticle;
 
     private class GUIVerticle extends AbstractVerticle {
 
@@ -53,6 +54,8 @@ public class WordCounterGUI extends JFrame implements ReportObserver {
         JButton startButton = new JButton("Start");
         JButton stopButton = new JButton("Stop");
 
+        Vertx vertx = Vertx.vertx();
+        vertx.deployVerticle(new GUIVerticle());
         startButton.addActionListener(e -> {
             String urlText = urlTextField.getText();
             String wordText = wordTextField.getText();
@@ -64,19 +67,18 @@ public class WordCounterGUI extends JFrame implements ReportObserver {
                 depth = 0;
             }
             if (!urlText.isEmpty() && !wordText.isEmpty() && depth>0) {
-                Vertx vertx = Vertx.vertx();
-                int maxDepth = depth;
-                vertx.deployVerticle(new GUIVerticle(), res -> vertx.deployVerticle(new WordCounterVerticle(
+                wordCounterVerticle = new WordCounterVerticle(
                         urlText,
                         wordText,
-                        maxDepth,
+                        depth,
                         System.currentTimeMillis()
-                )));
+                );
+                vertx.deployVerticle(wordCounterVerticle);
             }
         });
 
         stopButton.addActionListener(e -> {
-
+            vertx.undeploy(wordCounterVerticle.deploymentID());
         });
 
         buttonPanel.add(startButton);
