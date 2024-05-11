@@ -15,7 +15,7 @@ public class Test {
     private static final String TRENITALIA = "https://www.trenitalia.com/it.html";
     private static WordCounter wordCounter = new WordCounter();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         //Visita di pagine online
 //        Document doc = Jsoup.connect(TRENITALIA).get();
 //        System.out.println(doc.title());
