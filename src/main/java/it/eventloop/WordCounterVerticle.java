@@ -75,9 +75,11 @@ public class WordCounterVerticle extends AbstractVerticle {
                     Report newReport = new Report(url, wordCounter, currentDepth);
                     //System.out.println(newReport);
                     reports.add(newReport);
+                    /*
                     EventBus eb = this.getVertx().eventBus();
                     eb.publish("report", "Word \"" + word + "\" found " + newReport.wordCount() +
                             " times in " + newReport.url() + " (depth: " + newReport.depth() + ")");
+                     */
                 }
 
                 //Visit all the links
@@ -105,10 +107,10 @@ public class WordCounterVerticle extends AbstractVerticle {
                             promise.complete(reports);
                         });
             } catch (Exception e) {
-                promise.fail(e);
+                promise.complete(List.of());
             }
         } else {
-            promise.fail(" search stopped ");
+            promise.complete(List.of());
         }
         return promise;
     }

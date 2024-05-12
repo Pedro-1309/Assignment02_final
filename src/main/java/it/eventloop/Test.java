@@ -37,6 +37,6 @@ public class Test {
 //
         //Testo della pagina: (stampa anche il testo dei button)
 //        System.out.println(body.text());
-        wordCounter.getWordOccurencies(TAGLIATA, "a", 1);
+        wordCounter.getWordOccurencies(TAGLIATA, "il", 2);
     }
 }
