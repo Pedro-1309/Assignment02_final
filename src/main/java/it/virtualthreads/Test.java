@@ -30,7 +30,7 @@ public class Test {
 //
         //Testo della pagina: (stampa anche il testo dei button)
 //        System.out.println(body.text());
-        wordCounter.getWordOccurrences(TAGLIATA, "a", 1);
+        wordCounter.getWordOccurrences(TAGLIATA, "il", 3);
         Thread.sleep(100000);
     }
 }

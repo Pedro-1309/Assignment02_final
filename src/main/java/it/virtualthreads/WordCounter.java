@@ -87,6 +87,7 @@ public class WordCounter {
 
     public void getWordOccurrences(String url, String word, int depth) {
         start();
+        long startTime = System.currentTimeMillis();
         Thread.ofVirtual()
                 .name("master")
                 .start(() -> {
@@ -99,6 +100,7 @@ public class WordCounter {
                             mainThread.join();
                         } catch (InterruptedException ignored) {
                         } finally {
+                            System.out.println(" Elapsed time: " + (System.currentTimeMillis() - startTime) + " ms");
                             concurrentLinkedQueue.forEach(report -> System.out.println("Word \"" + word + "\" found " + report.wordCount() + " times in " + report.url() + " (depth: " + report.depth() + ")"));
                         }
                     }

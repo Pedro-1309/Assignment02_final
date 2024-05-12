@@ -15,13 +15,17 @@ public class Test {
     private static WordCounter wordCounter = new WordCounter();
 
     public static void main(String[] args) {
-        String word = "a";
-        Observable<Report> reports = wordCounter.getWordOccurrencesObservable(TAGLIATA, word, 1);
+        String word = "il";
+        long startTime = System.currentTimeMillis();
+        Observable<Report> reports = wordCounter.getWordOccurrencesObservable(TAGLIATA, word, 2);
         List<Report> result = new ArrayList<>();
         reports.subscribe(
                 result::add,
-                r -> {},
-                () -> result.forEach(report -> System.out.println("Word \"" + word + "\" found " + report.wordCount() + " times in " + report.url() + " (depth: " + report.depth() + ")")));
+                r -> System.out.println(" ERRORE \n" + r),
+                () -> {
+                    System.out.println(" Time elapsed: " + (System.currentTimeMillis() - startTime) + " ms");
+                    result.forEach(report -> System.out.println("Word \"" + word + "\" found " + report.wordCount() + " times in " + report.url() + " (depth: " + report.depth() + ")"));
+                });
         reports.blockingSubscribe();
     }
 }

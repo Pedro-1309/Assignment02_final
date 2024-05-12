@@ -67,7 +67,7 @@ public class WordCounter {
                             children.forEach(search -> {
                                     search.setBody(getBody(search.getUrl()));
                                     if (search.getBody() != null) {
-                                        log(" produced " + search);
+                                        //log(" produced " + search);
                                         newSearches.add(search);
                                         emitter.onNext(search);
                                     }

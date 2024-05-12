@@ -12,7 +12,7 @@ import java.util.List;
 public class WordCounterGUI extends JFrame implements ReportObserver {
     private WordCounterTextArea textArea;
 
-    private WordCounter wordCounter = new WordCounter();
+    private WordCounterMultiThreaded wordCounter = new WordCounterMultiThreaded();
     private Disposable subscriptionToWordCounter;
 
     public WordCounterGUI() {
@@ -50,11 +50,15 @@ public class WordCounterGUI extends JFrame implements ReportObserver {
                 depth = 0;
             }
             if (!urlText.isEmpty() && !wordText.isEmpty() && depth>0) {
-                subscriptionToWordCounter = wordCounter.getWordOccurrencesObservable(urlText, wordText, depth).subscribe(textArea::update);
+                subscriptionToWordCounter = wordCounter.getWordOccurrencesObservable().subscribe(textArea::update);
+                wordCounter.supply(urlText, wordText, depth);
             }
         });
 
-        stopButton.addActionListener(e -> subscriptionToWordCounter.dispose());
+        stopButton.addActionListener(e -> {
+            subscriptionToWordCounter.dispose();
+            wordCounter.stop();
+        });
 
         buttonPanel.add(startButton);
         buttonPanel.add(stopButton);
@@ -109,17 +113,17 @@ public class WordCounterGUI extends JFrame implements ReportObserver {
             this.reports.add(newReport);
             StringBuilder stringBuilder = new StringBuilder();
             this.reports.forEach(report ->
-                stringBuilder
-                        .append("Word \"")
-                        .append(word)
-                        .append("\" found ")
-                        .append(report.wordCount())
-                        .append(" times in ")
-                        .append(report.url())
-                        .append(" (depth: ")
-                        .append(report.depth())
-                        .append(")")
-                        .append("\n"));
+                    stringBuilder
+                            .append("Word \"")
+                            .append(word)
+                            .append("\" found ")
+                            .append(report.wordCount())
+                            .append(" times in ")
+                            .append(report.url())
+                            .append(" (depth: ")
+                            .append(report.depth())
+                            .append(")")
+                            .append("\n"));
             this.setText(stringBuilder.toString());
             this.repaint();
         }
