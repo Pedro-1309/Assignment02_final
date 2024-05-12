@@ -34,46 +34,53 @@ public class WordCounter {
         return Optional.empty();
     }
 
-    private Iterable<SearchInput> getChildSearches(SearchInput input) {
+    private List<SearchInput> getChildSearches(SearchInput input) {
         return input.getBody().getElementsByTag("a")
                 .stream()
                 .filter(link -> link.attr("href").startsWith("https://"))
                 .map(link -> new SearchInput(
                         link.attr("href"),
                         input.getWord(),
-                        input.getDepth() + 1,
-                        input.getMaxDepth()
+                        input.getDepth() + 1
                 )).toList();
     }
 
-    private PublishSubject<SearchInput> searches;
+    private Observable<SearchInput> searchInputs;
     private Disposable linkedPageSupplier;
 
-    public Observable<Report> getWordOccurrencesObservable() {
-        searches = PublishSubject.create();
-        Observable<SearchInput> fullInputs = searches
-                .subscribeOn(Schedulers.computation())
-                .map(input -> {
-                    //log(input.toString());
-                    input.setBody(getBody(input.getUrl()));
-                    return input;
-                }).filter(input -> input.getBody() != null);
-        Observable<Report> reports = fullInputs.map(this::getReport)
+    public Observable<Report> getWordOccurrencesObservable(String url, String word, int maxDepth) {
+        searchInputs = Observable.create(emitter -> {
+            int depth = 0;
+            List<SearchInput> previousSearches;
+            List<SearchInput> newSearches = new ArrayList<>();
+            SearchInput root = new SearchInput(url, word, depth);
+            root.setBody(getBody(root.getUrl()));
+            newSearches.add(root);
+            emitter.onNext(root);
+            depth++;
+            while (depth <= maxDepth) {
+                previousSearches = new ArrayList<>(newSearches);
+                newSearches.clear();
+                previousSearches.stream()
+                        .map(this::getChildSearches)
+                        .forEach(children -> {
+                            children.forEach(search -> {
+                                    search.setBody(getBody(search.getUrl()));
+                                    if (search.getBody() != null) {
+                                        log(" produced " + search);
+                                        newSearches.add(search);
+                                        emitter.onNext(search);
+                                    }
+                            });
+                        });
+                depth++;
+            }
+            emitter.onComplete();
+        });
+        return searchInputs.subscribeOn(Schedulers.computation())
+                .map(this::getReport)
                 .filter(Optional::isPresent)
                 .map(Optional::get);
-        linkedPageSupplier = fullInputs.subscribe(input -> {
-            if (input.getDepth() < input.getMaxDepth())
-                getChildSearches(input).forEach(searches::onNext);
-        });
-        return reports;
-    }
-
-    public void supply(String url, String word, int depth) {
-        searches.onNext(new SearchInput(url, word, 0, depth));
-    }
-
-    public void stop() {
-        linkedPageSupplier.dispose();
     }
 
     static private void log(String msg) {

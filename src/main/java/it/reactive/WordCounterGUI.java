@@ -50,15 +50,11 @@ public class WordCounterGUI extends JFrame implements ReportObserver {
                 depth = 0;
             }
             if (!urlText.isEmpty() && !wordText.isEmpty() && depth>0) {
-                subscriptionToWordCounter = wordCounter.getWordOccurrencesObservable().subscribe(textArea::update);
-                wordCounter.supply(urlText, wordText, depth);
+                subscriptionToWordCounter = wordCounter.getWordOccurrencesObservable(urlText, wordText, depth).subscribe(textArea::update);
             }
         });
 
-        stopButton.addActionListener(e -> {
-            subscriptionToWordCounter.dispose();
-            wordCounter.stop();
-        });
+        stopButton.addActionListener(e -> subscriptionToWordCounter.dispose());
 
         buttonPanel.add(startButton);
         buttonPanel.add(stopButton);

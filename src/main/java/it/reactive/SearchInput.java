@@ -7,14 +7,13 @@ public class SearchInput {
     private final String url;
     private final String word;
     private final int depth;
-    private final int maxDepth;
+    //private final int maxDepth;
     private Element body;
 
-    public SearchInput(String url, String word, int depth, int maxDepth) {
+    public SearchInput(String url, String word, int depth) {
         this.url = url;
         this.word = word;
         this.depth = depth;
-        this.maxDepth = maxDepth;
     }
 
     public String getUrl() {
@@ -27,10 +26,6 @@ public class SearchInput {
 
     public int getDepth() {
         return depth;
-    }
-
-    public int getMaxDepth() {
-        return maxDepth;
     }
 
     public Element getBody() {
