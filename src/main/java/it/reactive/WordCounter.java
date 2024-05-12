@@ -53,27 +53,39 @@ public class WordCounter {
     public void getWordOccurrences(String url, String word, int depth) throws InterruptedException {
         List<Report> result = new ArrayList<>();
         PublishSubject<SearchInput> searches = PublishSubject.create();
-        Observable<Report> reports = searches
+        log(" Search pubsub created ");
+        Observable<SearchInput> fullInputs = searches
+                .observeOn(Schedulers.computation())
                 .filter(input -> input.getDepth() <= input.getMaxDepth())
                 .map(input -> {
-                    log(" map1: " + input);
+                    log(input.toString());
                     input.setBody(getBody(input.getUrl()));
                     return input;
-                }).filter(input -> input.getBody() != null)
-                .map(input -> {
-                    log(" map2: " + input);
-                    getChildSearches(input).forEach(searches::onNext);
-                    return input;
-                }).map(this::getReport)
+                }).filter(input -> input.getBody() != null);
+        log(" Search input observable created ");
+        Observable<Report> reports = fullInputs.map(this::getReport)
                 .filter(Optional::isPresent)
                 .map(Optional::get);
+        log(" Search report observable created ");
         reports.subscribe(
-                result::add,
+                r -> log(r.toString()),
                 r -> {},
                 () -> result.forEach(System.out::println)
         );
+        log(" Report subscribe created");
+        fullInputs
+                //.subscribeOn(Schedulers.computation())
+                .subscribe(input -> {
+            log(" sub1: " + input);
+            getChildSearches(input).forEach(searches::onNext);
+        });
+        log(" Search on links subscribe created");
         searches.onNext(new SearchInput(url, word, 0, depth));
-        searches.onComplete();
+        log(" First page supplied");
+        //searches.onComplete();
+        //log(" Observable completed");
+        reports.blockingSubscribe();
+        log(" Done");
     }
 
     static private void log(String msg) {

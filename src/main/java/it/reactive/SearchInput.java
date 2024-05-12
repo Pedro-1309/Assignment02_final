@@ -40,4 +40,13 @@ public class SearchInput {
     public void setBody(Element body) {
         this.body = body;
     }
+
+    @Override
+    public String toString() {
+        return "SearchInput{" +
+                "url='" + url + '\'' +
+                ", word='" + word + '\'' +
+                ", depth=" + depth +
+                '}';
+    }
 }

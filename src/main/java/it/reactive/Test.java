@@ -9,6 +9,6 @@ public class Test {
     private static WordCounter wordCounter = new WordCounter();
 
     public static void main(String[] args) throws InterruptedException {
-        wordCounter.getWordOccurrences(TAGLIATA, "a", 1);
+        wordCounter.getWordOccurrences(TAGLIATA, "a", 3);
     }
 }
