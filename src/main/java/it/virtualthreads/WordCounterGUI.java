@@ -1,6 +1,7 @@
 package it.virtualthreads;
 
 import it.common.Report;
+import it.common.ReportObserver;
 
 import javax.swing.*;
 import java.awt.*;

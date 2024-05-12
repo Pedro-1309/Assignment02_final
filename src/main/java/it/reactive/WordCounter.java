@@ -1,20 +1,16 @@
 package it.reactive;
 
-import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 import it.common.Report;
-import it.virtualthreads.ReportObserver;
+import it.common.ReportObserver;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class WordCounter {
 
@@ -50,42 +46,34 @@ public class WordCounter {
                 )).toList();
     }
 
-    public void getWordOccurrences(String url, String word, int depth) throws InterruptedException {
-        List<Report> result = new ArrayList<>();
-        PublishSubject<SearchInput> searches = PublishSubject.create();
-        log(" Search pubsub created ");
+    private PublishSubject<SearchInput> searches;
+    private Disposable linkedPageSupplier;
+
+    public Observable<Report> getWordOccurrencesObservable() {
+        searches = PublishSubject.create();
         Observable<SearchInput> fullInputs = searches
-                .observeOn(Schedulers.computation())
-                .filter(input -> input.getDepth() <= input.getMaxDepth())
+                .subscribeOn(Schedulers.computation())
                 .map(input -> {
-                    log(input.toString());
+                    //log(input.toString());
                     input.setBody(getBody(input.getUrl()));
                     return input;
                 }).filter(input -> input.getBody() != null);
-        log(" Search input observable created ");
         Observable<Report> reports = fullInputs.map(this::getReport)
                 .filter(Optional::isPresent)
                 .map(Optional::get);
-        log(" Search report observable created ");
-        reports.subscribe(
-                r -> log(r.toString()),
-                r -> {},
-                () -> result.forEach(System.out::println)
-        );
-        log(" Report subscribe created");
-        fullInputs
-                //.subscribeOn(Schedulers.computation())
-                .subscribe(input -> {
-            log(" sub1: " + input);
-            getChildSearches(input).forEach(searches::onNext);
+        linkedPageSupplier = fullInputs.subscribe(input -> {
+            if (input.getDepth() < input.getMaxDepth())
+                getChildSearches(input).forEach(searches::onNext);
         });
-        log(" Search on links subscribe created");
+        return reports;
+    }
+
+    public void supply(String url, String word, int depth) {
         searches.onNext(new SearchInput(url, word, 0, depth));
-        log(" First page supplied");
-        //searches.onComplete();
-        //log(" Observable completed");
-        reports.blockingSubscribe();
-        log(" Done");
+    }
+
+    public void stop() {
+        linkedPageSupplier.dispose();
     }
 
     static private void log(String msg) {

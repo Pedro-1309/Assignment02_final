@@ -1,36 +1,19 @@
-package it.eventloop;
+package it.reactive;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.EventBus;
+import io.reactivex.rxjava3.disposables.Disposable;
+import it.common.Report;
+import it.common.ReportObserver;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WordCounterGUI extends JFrame {
+public class WordCounterGUI extends JFrame implements ReportObserver {
     private WordCounterTextArea textArea;
-    private WordCounterVerticle wordCounterVerticle;
 
-    private class GUIVerticle extends AbstractVerticle {
-
-        public void start(Promise<Void> startPromise) {
-            log("started.");
-            EventBus eb = this.getVertx().eventBus();
-            eb.consumer("report", message -> {
-                //System.out.println(message);
-                textArea.update(message.body().toString());
-            });
-            log("Ready.");
-            startPromise.complete();
-        }
-
-        private void log(String msg) {
-            System.out.println("[REACTIVE AGENT] ["+Thread.currentThread()+"] " + msg);
-        }
-    }
+    private WordCounter wordCounter = new WordCounter();
+    private Disposable subscriptionToWordCounter;
 
     public WordCounterGUI() {
         super("WordCounter View");
@@ -54,12 +37,12 @@ public class WordCounterGUI extends JFrame {
         JButton startButton = new JButton("Start");
         JButton stopButton = new JButton("Stop");
 
-        Vertx vertx = Vertx.vertx();
-        vertx.deployVerticle(new GUIVerticle());
         startButton.addActionListener(e -> {
             String urlText = urlTextField.getText();
             String wordText = wordTextField.getText();
             String depthText = depthTextField.getText();
+            textArea.clear();
+            textArea.setWord(wordText);
             int depth;
             try {
                 depth = Integer.parseInt(depthText);
@@ -67,20 +50,14 @@ public class WordCounterGUI extends JFrame {
                 depth = 0;
             }
             if (!urlText.isEmpty() && !wordText.isEmpty() && depth>0) {
-                textArea.clear();
-                wordCounterVerticle = new WordCounterVerticle(
-                        urlText,
-                        wordText,
-                        depth,
-                        System.currentTimeMillis()
-                );
-                vertx.deployVerticle(wordCounterVerticle);
+                subscriptionToWordCounter = wordCounter.getWordOccurrencesObservable().subscribe(textArea::update);
+                wordCounter.supply(urlText, wordText, depth);
             }
         });
 
         stopButton.addActionListener(e -> {
-            //vertx.eventBus().publish("stopped", "pippo");
-            wordCounterVerticle.forceStop();
+            subscriptionToWordCounter.dispose();
+            wordCounter.stop();
         });
 
         buttonPanel.add(startButton);
@@ -118,23 +95,41 @@ public class WordCounterGUI extends JFrame {
         });
     }
 
+    @Override
+    public void notifyNewReport(Report report) {
+        textArea.update(report);
+    }
+
+
     class WordCounterTextArea extends JTextArea {
 
-        List<String> reports = new ArrayList<>();
+        List<Report> reports = new ArrayList<>();
+        private String word;
 
         public WordCounterTextArea(int w, int h){
         }
 
-        public void update(String newReport) {
+        public void update(Report newReport) {
             this.reports.add(newReport);
             StringBuilder stringBuilder = new StringBuilder();
-            //System.out.println(" è arrivato qualcosa ");
-            this.reports.forEach(string ->
+            this.reports.forEach(report ->
                 stringBuilder
-                        .append(string)
+                        .append("Word \"")
+                        .append(word)
+                        .append("\" found ")
+                        .append(report.wordCount())
+                        .append(" times in ")
+                        .append(report.url())
+                        .append(" (depth: ")
+                        .append(report.depth())
+                        .append(")")
                         .append("\n"));
             this.setText(stringBuilder.toString());
             this.repaint();
+        }
+
+        public void setWord(String wordText) {
+            this.word = wordText;
         }
 
         public void clear() {

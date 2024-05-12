@@ -31,6 +31,7 @@ public class WordCounterVerticle extends AbstractVerticle {
         this.stopped = false;
     }
 
+    @Override
     public void start() {
         log("before");
         // x++;
@@ -56,7 +57,7 @@ public class WordCounterVerticle extends AbstractVerticle {
 
     private Promise<List<Report>> getWordOccurencies(String url, String word, int maxDepth, int currentDepth) {
         Promise<List<Report>> promise = Promise.promise();
-        if (!stopped) {
+        if (!isStopped()) {
             int wordCounter = 0;
             String docText;
             List<Report> reports = new ArrayList<>();
@@ -70,9 +71,9 @@ public class WordCounterVerticle extends AbstractVerticle {
                 for (String w : words){
                     if (w.equals(word)) wordCounter++;
                 }
-                if (wordCounter > 0){
+                if (wordCounter > 0) {
                     Report newReport = new Report(url, wordCounter, currentDepth);
-                    System.out.println(newReport);
+                    //System.out.println(newReport);
                     reports.add(newReport);
                     EventBus eb = this.getVertx().eventBus();
                     eb.publish("report", "Word \"" + word + "\" found " + newReport.wordCount() +
@@ -112,6 +113,10 @@ public class WordCounterVerticle extends AbstractVerticle {
         return promise;
     }
 
+    private synchronized boolean isStopped() {
+        return this.stopped;
+    }
+
     private void printReport(List<Report> reports) {
         reports.forEach(report -> System.out.println("Word \"" + word + "\" found " + report.wordCount() +
                 " times in " + report.url() + " (depth: " + report.depth() + ")"));
@@ -119,5 +124,9 @@ public class WordCounterVerticle extends AbstractVerticle {
 
     private void log(String msg) {
         System.out.println("[REACTIVE AGENT] ["+Thread.currentThread()+"] " + msg);
+    }
+
+    public synchronized void forceStop() {
+        this.stopped = true;
     }
 }

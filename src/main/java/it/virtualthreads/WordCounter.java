@@ -1,6 +1,7 @@
 package it.virtualthreads;
 
 import it.common.Report;
+import it.common.ReportObserver;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,13 +19,16 @@ public class WordCounter {
     private int initialDepth = 0;
     private ReportObserver observer;
     private boolean stopped = false;
+    private final boolean bulkResult;
     private final ReentrantLock lock = new ReentrantLock();
 
     public WordCounter(ReportObserver observer) {
+        this.bulkResult = false;
         this.observer = observer;
     }
 
     public WordCounter() {
+        this.bulkResult = true;
     }
 
     private void getWordOccurrences(String url, String word, int maxDepth, int currentDepth) {
@@ -41,12 +45,15 @@ public class WordCounter {
                 if (w.equals(word)) wordCounter++;
             }
             if (wordCounter > 0){
-                lock.lock();
-                if (observer != null && isRunning()) {
-                    observer.notifyNewReport(new Report(url, wordCounter, currentDepth));
+                if (bulkResult) {
+                    concurrentLinkedQueue.add(new Report(url, wordCounter, currentDepth));
+                } else {
+                    lock.lock();
+                    if (observer != null && isRunning()) {
+                        observer.notifyNewReport(new Report(url, wordCounter, currentDepth));
+                    }
+                    lock.unlock();
                 }
-                lock.unlock();
-                //concurrentLinkedQueue.add(new Report(url, wordCounter, currentDepth));
             }
 
             //Visit all the links
@@ -65,27 +72,37 @@ public class WordCounter {
                         threads.add(thread);
                     }
                 }
-                threads.forEach(t -> {
-                    try {
-                        t.join();
-                    } catch (Exception ignored) {};
-                });
+                if (bulkResult) {
+                    threads.forEach(t -> {
+                        try {
+                            t.join();
+                        } catch (Exception ignored) {}
+                    });
+                }
             }
         } catch (Exception ignored) {}
     }
 
+    private Thread mainThread;
+
     public void getWordOccurrences(String url, String word, int depth) {
         start();
-        Thread mainThread = Thread
-            .ofVirtual()
-            .name("myVirtualThread-0")
-            .start(() -> getWordOccurrences(url, word, depth, initialDepth));
-        /*
-        try {
-            mainThread.join();
-        } catch (InterruptedException ignored) {}
-         */
-        //concurrentLinkedQueue.forEach(report -> System.out.println("Word \"" + word + "\" found " + report.wordCount() + " times in " + report.url() + " (depth: " + report.depth() + ")"));
+        Thread.ofVirtual()
+                .name("master")
+                .start(() -> {
+                    mainThread = Thread
+                            .ofVirtual()
+                            .name("myVirtualThread-0")
+                            .start(() -> getWordOccurrences(url, word, depth, initialDepth));
+                    if (bulkResult) {
+                        try {
+                            mainThread.join();
+                        } catch (InterruptedException ignored) {
+                        } finally {
+                            concurrentLinkedQueue.forEach(report -> System.out.println("Word \"" + word + "\" found " + report.wordCount() + " times in " + report.url() + " (depth: " + report.depth() + ")"));
+                        }
+                    }
+                });
     }
 
     public synchronized boolean isRunning () {

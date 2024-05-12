@@ -8,7 +8,7 @@ public class Test {
     private static final String TRENITALIA = "https://www.trenitalia.com/it.html";
     private static final WordCounter wordCounter = new WordCounter();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         //Visita di pagine online
 //        Document doc = Jsoup.connect(TRENITALIA).get();
 //        System.out.println(doc.title());
@@ -30,6 +30,7 @@ public class Test {
 //
         //Testo della pagina: (stampa anche il testo dei button)
 //        System.out.println(body.text());
-        wordCounter.getWordOccurrences(TAGLIATA, "a", 2);
+        wordCounter.getWordOccurrences(TAGLIATA, "a", 1);
+        Thread.sleep(100000);
     }
 }
