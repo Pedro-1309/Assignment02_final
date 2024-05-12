@@ -38,6 +38,7 @@ public class WordCounterGUI extends JFrame implements ReportObserver {
             String urlText = urlTextField.getText();
             String wordText = wordTextField.getText();
             String depthText = depthTextField.getText();
+            textArea.clear();
             textArea.setWord(wordText);
             int depth;
             try {
@@ -46,13 +47,11 @@ public class WordCounterGUI extends JFrame implements ReportObserver {
                 depth = 0;
             }
             if (!urlText.isEmpty() && !wordText.isEmpty() && depth>0) {
-                wordCounter.getWordOccurencies(urlText, wordText, depth);
+                wordCounter.getWordOccurrences(urlText, wordText, depth);
             }
         });
 
-        stopButton.addActionListener(e -> {
-            wordCounter.stop();
-        });
+        stopButton.addActionListener(e -> wordCounter.stop());
 
         buttonPanel.add(startButton);
         buttonPanel.add(stopButton);
@@ -124,6 +123,12 @@ public class WordCounterGUI extends JFrame implements ReportObserver {
 
         public void setWord(String wordText) {
             this.word = wordText;
+        }
+
+        public void clear() {
+            this.reports.clear();
+            this.setText("");
+            this.repaint();
         }
     }
 }

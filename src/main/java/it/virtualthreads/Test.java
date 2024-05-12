@@ -1,7 +1,5 @@
 package it.virtualthreads;
 
-import it.virtualthreads.WordCounter;
-
 public class Test {
 
     private static final String WIKIPEDIA = "https://it.wikipedia.org/wiki/Pagina_principale";
@@ -32,6 +30,6 @@ public class Test {
 //
         //Testo della pagina: (stampa anche il testo dei button)
 //        System.out.println(body.text());
-        wordCounter.getWordOccurencies(TAGLIATA, "a", 2);
+        wordCounter.getWordOccurrences(TAGLIATA, "a", 2);
     }
 }
